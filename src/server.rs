@@ -120,7 +120,7 @@ where
 /// A listening HTTP server that accepts HTTP 1 connections.
 pub struct Server<'a> {
     #[cfg(feature = "threadpool")]
-    thread_pool: ThreadPool,
+    max_threads: usize,
     incoming: Box<dyn Iterator<Item = Connection> + 'a>,
 }
 
@@ -165,9 +165,10 @@ impl Server<'_> {
         S: Service,
         S: Send + Clone + 'static,
     {
+        let thread_pool = ThreadPool::new(self.max_threads);
         for conn in self.incoming {
             let mut app = service.clone();
-            self.thread_pool.execute(move || {
+            thread_pool.execute(move || {
                 serve(conn, &mut app).ok();
             });
         }
@@ -253,9 +254,10 @@ impl Server<'_> {
         M: MakeService + 'static,
         <M as MakeService>::Service: Send,
     {
+        let thread_pool = ThreadPool::new(self.max_threads);
         for conn in self.incoming {
             if let Ok(mut handler) = make_service.call(&conn) {
-                self.thread_pool.execute(move || {
+                thread_pool.execute(move || {
                     serve(conn, &mut handler).ok();
                 });
             }
@@ -407,7 +409,7 @@ impl ServerBuilder {
     ) -> Server<'a> {
         Server {
             #[cfg(feature = "threadpool")]
-            thread_pool: ThreadPool::new(self.max_threads),
+            max_threads: self.max_threads,
             incoming: Box::new(conns.into_iter().filter_map(move |conn| {
                 let conn = conn.into();
                 conn.set_read_timeout(self.read_timeout).ok()?;
