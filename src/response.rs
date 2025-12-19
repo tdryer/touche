@@ -137,10 +137,7 @@ pub(crate) fn write_response<B: HttpBody>(
         match (content_length, body.len()) {
             (Some(len), Some(body_len)) => {
                 if len.0 != body_len {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "content-length doesn't match body length",
-                    ));
+                    return Err(io::Error::other("content-length doesn't match body length"));
                 }
                 Encoding::FixedLength(len.0)
             }

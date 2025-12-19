@@ -507,9 +507,7 @@ fn serve<A: Service>(conn: Connection, app: &mut A) -> io::Result<()> {
                     };
                 }
 
-                let mut res = app
-                    .call(req)
-                    .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+                let mut res = app.call(req).map_err(io::Error::other)?;
 
                 *res.version_mut() = version;
 
@@ -542,7 +540,7 @@ fn serve<A: Service>(conn: Connection, app: &mut A) -> io::Result<()> {
                 }
             }
             Err(ParseError::ConnectionClosed) => break,
-            Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err)),
+            Err(err) => return Err(io::Error::other(err)),
         }
     }
 

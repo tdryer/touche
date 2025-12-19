@@ -140,10 +140,7 @@ pub(crate) fn write_request<B: HttpBody>(
         match (content_length, body.len()) {
             (Some(len), Some(body_len)) => {
                 if len.0 != body_len {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "content-length doesn't match body length",
-                    ));
+                    return Err(io::Error::other("content-length doesn't match body length"));
                 }
                 Encoding::FixedLength(len.0)
             }
@@ -162,10 +159,7 @@ pub(crate) fn write_request<B: HttpBody>(
         headers.typed_insert::<headers::TransferEncoding>(headers::TransferEncoding::chunked());
         Encoding::Chunked
     } else {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "could not determine the size of the body",
-        ));
+        return Err(io::Error::other("could not determine the size of the body"));
     };
 
     let version = if version == Version::HTTP_11 {
@@ -173,10 +167,7 @@ pub(crate) fn write_request<B: HttpBody>(
     } else if version == Version::HTTP_10 {
         "HTTP/1.0"
     } else {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "unsupported http version",
-        ));
+        return Err(io::Error::other("unsupported http version"));
     };
 
     stream.write_all(format!("{method} {uri} {version}\r\n").as_bytes())?;

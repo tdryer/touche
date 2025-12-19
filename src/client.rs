@@ -118,8 +118,7 @@ where
     request::write_request(req, &mut writer)?;
     writer.flush()?;
 
-    let res = response::parse_response(reader)
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    let res = response::parse_response(reader).map_err(io::Error::other)?;
 
     let asks_for_close = res
         .headers()

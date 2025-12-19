@@ -56,7 +56,7 @@ impl BodyChannel {
     pub fn send<T: Into<Vec<u8>>>(&self, data: T) -> io::Result<()> {
         self.0
             .send(Ok(data.into().into()))
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, "body closed"))
+            .map_err(|_| io::Error::other("body closed"))
     }
 
     /// Send a trailer header. Note that trailers are buffered, and are only sent after the last
@@ -82,14 +82,12 @@ impl BodyChannel {
     pub fn send_trailers(&self, trailers: HeaderMap) -> io::Result<()> {
         self.0
             .send(Ok(Chunk::Trailers(trailers)))
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, "body closed"))
+            .map_err(|_| io::Error::other("body closed"))
     }
 
     /// Aborts the body in an abnormal fashion.
     pub fn abort(self) {
-        self.0
-            .send(Err(io::Error::new(io::ErrorKind::Other, "aborted")))
-            .ok();
+        self.0.send(Err(io::Error::other("aborted"))).ok();
     }
 }
 
@@ -253,7 +251,7 @@ impl TryFrom<File> for Body {
     fn try_from(file: File) -> Result<Self, Self::Error> {
         match file.metadata() {
             Ok(meta) if meta.is_file() => Ok(Body::from_reader(file, meta.len() as usize)),
-            Ok(_) => Err(io::Error::new(io::ErrorKind::Other, "not a file")),
+            Ok(_) => Err(io::Error::other("not a file")),
             Err(err) => Err(err),
         }
     }
